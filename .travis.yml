@@ -14,8 +14,6 @@ before_install:
   -in lab-devops-cloud-314617-2cc3fc945047.json.enc -out ../lab-devops-cloud-314617-2cc3fc945047.json
   -d
 
-
-
 # Define o script de Teste que deve rodar toda vez que o código for alterado.
 
 jobs:
