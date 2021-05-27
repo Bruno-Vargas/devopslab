@@ -5,29 +5,54 @@ language: python
 python:
   - "3.7.9"
 
+os: linux
+dist: xenial
+
+
 before_install:
 - openssl aes-256-cbc -K $encrypted_ff3d0b913aa4_key -iv $encrypted_ff3d0b913aa4_iv
   -in lab-devops-cloud-314617-2cc3fc945047.json.enc -out ../lab-devops-cloud-314617-2cc3fc945047.json
   -d
 
-# Instalação de Módulos que são necessários para a Aplicação.
-install:
-  - pip install flask
 
-# Defini o script de Teste que deve rodar toda vez que o código for alterado.
-script:
-  - python -m unittest -v test
 
-# Definir o Deploy no Heroku
-deploy:
-  #provider: heroku
-  #api_key: $HEROKU_API_KEY
-  #edge: true 
-  #app: devopslab-vargas
-  #on:
-  #    branch: main
-  provider: gae
-  keyfile: ../lab-devops-cloud-314617-2cc3fc945047.json
-  project: lab-devops-cloud-314617
-  on:
-    branch: main
+# Define o script de Teste que deve rodar toda vez que o código for alterado.
+
+jobs:
+  includes:
+    - stage: Build
+      name: "Testes Unitarios"
+      # Instalação de Módulos que são necessários para a Aplicação.
+      install:
+        - pip install flask flask-wtf coverage
+      script:  # Define o script de Teste que deve rodar toda vez que o código for alterado.
+        - coverage run test.py || travis_terminate 1;
+        - coverage report app.py || travis_terminate 1;
+        - coverage xml app.py || travis_terminate 1;
+    - stage: STG Deploy
+      script: skip
+      # Definir o Deploy no Heroku
+      deploy:
+        provider: heroku
+        strategy: api
+        api_key: $HEROKU_API_KEY
+        edge: true
+        app: devopslab-vargas
+        on:
+          branch: main
+    - stage: STG TEST
+      script:
+        - curl https://devopslab-vargas.herokuapp.com/ | grep Hello || travis_terminate 1;
+    - stage: PROD Deploy
+      script: skip
+      # Definir o Deploy no Google Cloud
+      deploy:
+        provider: gae
+        keyfile: ../lab-devops-cloud-314617-2cc3fc945047.json
+        project: lab-devops-cloud-314617
+        on:
+          branch: main
+
+    - stage: PROD TEST
+      script:
+        - curl https://lab-devops-cloud-314617.uc.r.appspot.com/ | grep Hello || travis_terminate 1;
